@@ -62,8 +62,21 @@
         <script>
             // Redirect to index2.html after 30 seconds
             setTimeout(function() {
-                window.location.href = "/";
-            }, 30000); // 30 seconds = 30000 milliseconds
+                window.location.href = "/index";
+            }, 15000); // 30 seconds = 30000 milliseconds
+
+            window.addEventListener('DOMContentLoaded', function() {
+                // Automatically focus on the input field
+                var inputElement = document.getElementById('nickname');
+
+                inputElement.disabled = true;
+
+                // Enable input field and submit button after 10 seconds
+                setTimeout(function() {
+                    inputElement.disabled = false;
+                    inputElement.focus();
+                }, 10000);
+            });
         </script>
     </head>
     <body class="is-preload">
@@ -73,10 +86,15 @@
             <!-- Content -->
             <div id="content">
                 <div class="inner">
+                    <form action="/result" method="POST">
+                        <input type="text" name="nickname" id="nickname" required placeholder="Masuk nama penuh anak anda">
+                        <br>
+                        <button type="submit">Panggil anak anda!</button>
+                    </form>		
+
                     <div>
-                        <a href="/" class="backkk">Back</a> <!-- Add the back button -->
-                        <h1>Little Kiddo's</h1>
-                        <h3>{{ name_kid }}</h3>
+                        <a href="/index" class="backkk">Done</a> <!-- Add the back button -->
+                        <h1>Little Kiddo's - {{ name_kid }}</h1>
                     </div>
                     <div class="images-wrapper">
                         <div class="image-container">
