@@ -1,0 +1,107 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Little Kiddos</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/main.css') }}">
+		<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/noscript.css') }}"></noscript>
+
+		<script>
+			var isCameraOpen = false; // Track if the camera is currently open or closed
+			var videoStream = null; // Track the active video stream
+		
+			function openCamera() {
+				var button = document.getElementById('camera-button');
+				var videoContainer = document.getElementById('video-container');
+			  
+				if (!isCameraOpen) {
+					// Open the camera
+			  
+					if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+						navigator.mediaDevices.getUserMedia({ video: true })
+							.then(function(stream) {
+								var videoElement = document.createElement('video');
+								videoElement.id = 'video-element';
+								videoElement.srcObject = stream;
+								videoElement.play();
+			  
+								videoContainer.innerHTML = '';
+								videoContainer.appendChild(videoElement);
+			  
+								button.textContent = 'Tutup kamera sebab malu lah hihi.';
+								isCameraOpen = true;
+			  
+								videoStream = stream;
+							})
+							.catch(function(error) {
+								console.log('Error accessing camera:', error);
+							});
+					} else {
+						console.log('Camera access not supported by the browser.');
+					}
+				} else {
+					// Close the camera
+			  
+					videoStream.getTracks().forEach(function(track) {
+						track.stop();
+					});
+			  
+					videoContainer.innerHTML = '';
+			  
+					button.textContent = 'Buka kamera.';
+					isCameraOpen = false;
+				}			
+			}
+			
+			window.addEventListener('DOMContentLoaded', function() {
+				// Automatically focus on the input field
+				var inputElement = document.getElementById('text');
+				inputElement.focus();
+			});
+
+			function showErrorAlert(message) {
+				swal('Error', message, 'error');
+			}
+		</script>		
+
+		<style>
+			#video-container {
+				margin-bottom: 20px;
+			}
+			#video-container video {
+				max-width: 100%;
+			}
+		</style>
+
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/logo.svg" alt="" /></span>
+						<h1>Little Kiddo's Viral</h1>
+						<p>Sistem taska yang selamat dan boleh dipercayai.<br />
+						Hak Milik Anak Sepul ©</p>
+						<form action="/result" method="POST">
+							<input type="text" name="text" id="text" required placeholder="Masuk nama penuh anak anda">
+							<br>
+							<button type="submit">Panggil anak anda!</button>
+						</form>
+					</header>
+			</div>
+
+		<!-- Scripts -->
+			<script src="{{ url_for('static', filename='../assets/js/jquery.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/jquery.scrollex.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/jquery.scrolly.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/browser.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/breakpoints.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/util.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/main.js') }}"></script>
+	</body>
+</html>

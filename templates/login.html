@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='../assets/pics/logo.ico') }}">
+		<title>Little Kiddos - Login</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/main.css') }}">
+		<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/noscript.css') }}"></noscript>
+
+		<script>		
+			// window.addEventListener('DOMContentLoaded', function() {
+			// 	// Automatically focus on the input field
+			// 	var inputElement = document.getElementById('nickname');
+			// 	inputElement.focus();
+			// });
+
+			function showErrorAlert(message) {
+				swal('Error', message, 'error');
+			}
+		</script>		
+
+		<style>
+			#video-container {
+				margin-bottom: 20px;
+			}
+			#video-container video {
+				max-width: 100%;
+			}
+		</style>
+
+	</head>
+	<body class="is-preload">
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/logo.svg" alt="" /></span>
+						<h1>Little Kiddo's Safety Kids' Caller</h1>
+						<p>Quick and reliable childcare system.<br />
+						Copyright Reserved ©</p>
+						<div>
+							<!-- <a href="/studentlist" class="button">Senarai Anak Asuhan</a> -->
+							<a href="/register" class="button">Daftar Akaun</a>
+						</div><br>
+						<form action="/" method="POST">
+							<input type="text" name="username" id="username" required placeholder="Masuk nama pengguna">
+							<br>
+                            <input type="password" name="password" id="password" required placeholder="Masuk kata laluan anda">
+                            <br>
+							<button type="submit">Log masuk</button>
+						</form>						
+					</header>				
+			</div>
+
+		<!-- Scripts -->
+			<script src="{{ url_for('static', filename='../assets/js/jquery.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/jquery.scrollex.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/jquery.scrolly.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/browser.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/breakpoints.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/util.js') }}"></script>
+			<script src="{{ url_for('static', filename='../assets/js/main.js') }}"></script>
+	</body>
+</html>
