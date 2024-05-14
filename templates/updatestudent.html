@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Student</title>
+    <link rel="icon" type="image/x-icon" href="../assets/pics/logo.ico">
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/main.css') }}">
+	<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+	<noscript><link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/noscript.css') }}"></noscript>
+
+    <style>
+        /* add padding to the body of thepage to make it proper */
+        body {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <a href="/studentlist" class="backkk">Back</a> <!-- Add the back button -->
+    <br><br><br><br><br>
+    <h2>Update Student</h2>
+    <form method="POST" action="/update/{{ student[0] }}">
+        <div>
+            <label for="fullname">Full Name:</label>
+            <input type="text" id="fullname" name="fullname" value="{{ student[1] }}" required>
+        </div>
+        <div>
+            <label for="nickname">Nickname:</label>
+            <input type="text" id="nickname" name="nickname" value="{{ student[2] }}" required>
+        </div>
+        <br><br>
+        <button type="submit">Update</button>
+    </form>
+
+    <script src="{{ url_for('static', filename='../assets/js/jquery.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/jquery.scrollex.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/jquery.scrolly.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/browser.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/breakpoints.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/util.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/main.js') }}"></script>
+</body>
+</html>

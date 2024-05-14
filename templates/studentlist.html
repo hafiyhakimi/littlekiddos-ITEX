@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student List</title>
+    <link rel="icon" type="image/x-icon" href="../assets/pics/logo.ico">
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/main.css') }}">
+	<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+	<noscript><link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/noscript.css') }}"></noscript>
+
+    <style>
+        /* add padding to the body of thepage to make it proper */
+        body {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="backkk">Back</a> <!-- Add the back button -->
+    <br><br><br><br><br>
+    <h2>Student List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Nickname</th>
+                <th>Student Image</th>
+                <th>Parent Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student[0] }}</td>
+                <td>{{ student[1] }}</td>
+                <td>{{ student[2] }}</td>
+                <td>{{ student[3] }}</td>
+                <td>{{ student[4] }}</td>
+                <td>
+                    <a href="/update/{{ student[0] }}">Update</a>
+                    <a href="/delete/{{ student[0] }}">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script src="{{ url_for('static', filename='../assets/js/jquery.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/jquery.scrollex.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/jquery.scrolly.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/browser.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/breakpoints.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/util.js') }}"></script>
+	<script src="{{ url_for('static', filename='../assets/js/main.js') }}"></script>
+</body>
+</html>
