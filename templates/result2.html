@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="icon" type="image/x-icon" href="../assets/pics/logo.ico">
+        <title>Little Kiddos</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/main.css') }}">
+        <noscript><link rel="stylesheet" href="{{ url_for('static', filename='../assets/css/noscript.css') }}"></noscript>
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                text-align: center;
+            }
+            h1 {
+                margin-bottom: 20px;
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .image-container {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+            .image-container img {
+                max-width: 100%;
+                height: auto;
+            }
+            .no-image {
+                color: #ff0000;
+                font-weight: bold;
+            }
+            .images-wrapper {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .image-container {
+                flex: 1;
+                margin: 0 10px;
+            }
+            .back-button {
+                position: absolute;
+                top: 50%;
+                right: 20px;
+                color: #fff;
+                background-color: #333;
+                padding: 10px 20px;
+                border-radius: 5px;
+                text-decoration: none;
+                font-size: 14px;
+                transition: background-color 0.3s ease;
+                transform: translateY(-50%);
+            }
+            .back-button:hover {
+                background-color: #555;
+            }
+        </style>
+
+        <script>
+            // Redirect to index2.html after 30 seconds
+            setTimeout(function() {
+                window.location.href = "/index";
+            }, 15000); // 30 seconds = 30000 milliseconds
+        </script>
+    </head>
+    <body class="is-preload">
+        <!-- Wrapper -->
+        <div id="wrapper">
+
+            <!-- Content -->
+            <div id="content">
+                <div class="inner">
+                    <div>
+                        <a href="/index" class="backkk">Back</a> <!-- Add the back button -->
+                        <h1>Little Kiddo's</h1>
+                        <h3>{{ name_kid }}</h3>
+                    </div>
+                    <div class="images-wrapper">
+                        <div class="image-container">
+                          {% if image_kid %}
+                          <img src="{{ image_kid }}" alt="Student Image">
+                          {% else %}
+                          <p class="no-image">No student image available</p>
+                          {% endif %}
+                        </div>
+                        <div class="image-container">
+                          {% if image_parent %}
+                          <img src="{{ image_parent }}" alt="Parent Image">
+                          {% else %}
+                          <p class="no-image">No parent image available</p>
+                          {% endif %}
+                        </div>
+                    </div>                                                                              
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Scripts -->
+        <script src="{{ url_for('static', filename='../assets/js/jquery.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='../assets/js/jquery.scrollex.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='../assets/js/jquery.scrolly.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='../assets/js/browser.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='../assets/js/breakpoints.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='../assets/js/util.js') }}"></script>
+        <script src="{{ url_for('static', filename='../assets/js/main.js') }}"></script>
+    </body>
+</html>
