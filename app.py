@@ -1,12 +1,16 @@
 from flask_mysqldb import MySQL
 import pygame
 import os
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
 from collections import deque
 from threading import Thread, Event
 import time
 import pyttsx3
 import threading
+import qr_scanner
+from flask_socketio import SocketIO
+import json
+from camera import Camera
 
 app = Flask(__name__, static_folder='assets')
 
@@ -287,8 +291,39 @@ def play_audio(file_path):
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
 
+# Initialize the camera
+camera = Camera()
+
+# Function to generate the video stream
+def generate_frames():
+    while True:
+        frame = camera.get_frame()
+        if frame:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# Route to serve the live feed
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# Background QR code scanner thread
+def scan_qr():
+    while True:
+        qr_data = qr_scanner.scan()
+        if qr_data:
+            socketio.emit('qr_code', json.dumps({"qr_text": qr_data}))
+            time.sleep(1)  # Avoid duplicate detections
+
+# Start QR code scanner in a separate thread
+threading.Thread(target=scan_qr, daemon=True).start()
+
 # Usage example
 # play_audio('path/to/your/audio.mp3')
 
 if __name__ == '__main__':
     app.run()
+    try:
+        socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    finally:
+        camera.release()

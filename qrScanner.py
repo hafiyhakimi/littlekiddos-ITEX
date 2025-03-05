@@ -7,19 +7,23 @@ Salman H.
 
 import cv2
 from pyzbar.pyzbar import decode
+from camera import Camera
 
 def scan():
-    cap = cv2.VideoCapture(0)
+    cam = Camera()
     qr_text = None
 
     while True:
-        _, frame = cap.read()
-        decoded_objects = decode(frame)
+        frame = cam.get_frame()
+        if frame is None:
+            continue
 
+        # Decode QR code
+        decoded_objects = decode(cv2.imdecode(frame, cv2.IMREAD_COLOR))
         for obj in decoded_objects:
             qr_text = obj.data.decode('utf-8')
-            cap.release()
+            cam.release()  # Release camera after scanning
             return qr_text
 
-    cap.release()
+    cam.release()
     return None
