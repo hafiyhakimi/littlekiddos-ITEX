@@ -1,2 +1,6 @@
 flask_mysqldb
 pygame
+opencv-python
+pyzbar
+eventlet
+flask-socketio
