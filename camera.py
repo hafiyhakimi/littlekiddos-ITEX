@@ -15,6 +15,7 @@ class Camera:
         self.cap = cv2.VideoCapture(camera_index)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))
 
         if not self.cap.isOpened():
             raise Exception("❌ Error: Could not open camera.")
@@ -45,6 +46,14 @@ class Camera:
             else:
                 print("❌ No frame captured!")
 
+        return ret, frame
+
+    def get_frame_raw(self):
+        """Return the latest frame without encoding."""
+        if self.frame is None:
+            return None
+        return self.frame.copy()
+
     def get_frame(self):
         """Return the latest frame as a JPEG byte array."""
         if self.frame is None:
@@ -54,7 +63,7 @@ class Camera:
         print(f"📷 Original Frame shape: {self.frame.shape}")
 
         # Ensure the frame is resized to a fixed resolution
-        resized_frame = cv2.resize(self.frame, (640, 480))
+        resized_frame = cv2.resize(self.frame, (1280, 720))
 
         print(f"📷 Resized Frame shape: {resized_frame.shape}")
 
@@ -63,7 +72,8 @@ class Camera:
             print("❌ Error: Frame encoding failed!")
             return None  
 
-        return buffer.tobytes()
+        # return buffer.tobytes()
+        return self.frame
 
     def release(self):
         """Release the camera."""

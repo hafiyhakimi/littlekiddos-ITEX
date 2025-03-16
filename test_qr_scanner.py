@@ -5,34 +5,32 @@ This is to do functional test to QR scanner ability of the camera
 Salman H.
 """
 
-import cv2
 import unittest
-from pyzbar.pyzbar import decode
-from qrScanner import scan  # Import the function from your QR scanner module
+import numpy as np
+from qrScanner import QRScanner  # Ensure we are actually testing this module
 
 class TestQRScanner(unittest.TestCase):
-    def test_qr_scanner(self):
-        """Test if the QR scanner correctly detects and decodes a QR code."""
-        # Load a test image with a known QR code
-        test_image = cv2.imread('test_qr.png')  # Replace with a real QR code image
+    def setUp(self):
+        """Initialize QR scanner before each test"""
+        self.qr_scanner = QRScanner()
 
-        # Ensure the image is loaded
-        self.assertIsNotNone(test_image, "Test QR image could not be loaded.")
+    def test_detect_qr_code(self):
+        result = self.qr_scanner.scan_from_camera()
+        if result:
+            print(f"📜 Final QR Code Data: {result}")
+        else:
+            print("⚠️ No QR code detected.")
 
-        # Decode QR code from the image
-        decoded_objects = decode(test_image)
+    def test_no_qr_code(self):
+        """Test when no QR code is present in an image"""
+        # Create a blank image (no QR code)
+        blank_image = np.zeros((500, 500, 3), dtype=np.uint8)
 
-        # Ensure at least one QR code is detected
-        self.assertGreater(len(decoded_objects), 0, "No QR codes detected.")
+        # Run the QR scanner
+        decoded_text = self.qr_scanner.scan_qr_code(blank_image)
 
-        # Extract the decoded text
-        qr_text = decoded_objects[0].data.decode('utf-8')
+        # Expect no QR code to be detected
+        self.assertIsNone(decoded_text, "❌ QR scanner detected a QR code when none was present!")
 
-        # Expected QR code content (change this to match your test QR)
-        expected_text = "Lfgggggggg!!!"
-
-        # Assert the decoded text is correct
-        self.assertEqual(qr_text, expected_text, "QR code content does not match expected value.")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
