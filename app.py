@@ -7,12 +7,19 @@ from threading import Thread, Event
 import time
 import pyttsx3
 import threading
-import qr_scanner
+import cv2
+
+from qrScanner import QRScanner
 from flask_socketio import SocketIO
 import json
 from camera import Camera
 
 app = Flask(__name__, static_folder='assets')
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+camera = Camera()
+qr_scanner = QRScanner()
+latest_qr_data = None
 
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -298,22 +305,34 @@ camera = Camera()
 def generate_frames():
     while True:
         frame = camera.get_frame()
-        if frame:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        if frame is None:
+            continue
+        
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 # Route to serve the live feed
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+
 # Background QR code scanner thread
 def scan_qr():
+    global latest_qr_data
     while True:
-        qr_data = qr_scanner.scan()
+        frame = camera.get_frame()
+        if frame is None:
+            continue
+        
+        qr_data = qr_scanner.scan_qr_code(frame)
         if qr_data:
-            socketio.emit('qr_code', json.dumps({"qr_text": qr_data}))
-            time.sleep(1)  # Avoid duplicate detections
+            latest_qr_data = qr_data
+            print(f"🎯 QR Code Detected: {qr_data}")
+            time.sleep(2)
 
 # Start QR code scanner in a separate thread
 threading.Thread(target=scan_qr, daemon=True).start()
@@ -322,8 +341,8 @@ threading.Thread(target=scan_qr, daemon=True).start()
 # play_audio('path/to/your/audio.mp3')
 
 if __name__ == '__main__':
-    app.run()
-    try:
-        socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-    finally:
-        camera.release()
+    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    # try:
+    #     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # finally:
+    #     camera.release()

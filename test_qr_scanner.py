@@ -7,7 +7,7 @@ Salman H.
 
 import unittest
 import numpy as np
-from qrScanner import QRScanner  # Ensure we are actually testing this module
+from qrScanner import QRScanner
 
 class TestQRScanner(unittest.TestCase):
     def setUp(self):

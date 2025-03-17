@@ -52,24 +52,20 @@ class QRScanner:
 
             qr_data = self.scan_qr_code(frame)
 
-            display_frame = cv2.resize(frame, (640, 480))
+            # display_frame = cv2.resize(frame, (640, 480))
 
-            # Display the frame
-            if self.is_display_available():
-                cv2.imshow("QR Scanner", display_frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+            # # Display the frame
+            # if self.is_display_available():
+            #     cv2.imshow("QR Scanner", display_frame)
+            #     if cv2.waitKey(1) & 0xFF == ord('q'):
+            #         break
 
             if qr_data:
                 print(f"✅ Scanned QR Code: {qr_data}")
-                break  # Exit once a QR code is found
+                return qr_data
 
-            # Press 'q' to exit
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            # # Press 'q' to exit
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #     break
 
             # time.sleep(max(0, 0.1 - (time.time() - start_time)))
-
-        self.camera.release()  # Release camera properly
-        cv2.destroyAllWindows()
-        return qr_data
