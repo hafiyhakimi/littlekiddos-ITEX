@@ -10,6 +10,7 @@ import cv2
 import time
 from camera import Camera
 
+@unittest.skipIf(os.getenv('CI') == 'true', "Skipping live feed test in CI")
 class TestLiveFeed(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
