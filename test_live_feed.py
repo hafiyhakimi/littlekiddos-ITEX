@@ -7,6 +7,7 @@ Salman H.
 
 import unittest
 import cv2
+import os
 import time
 from camera import Camera
 
