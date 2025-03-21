@@ -10,28 +10,30 @@ import threading
 import time
 
 class Camera:
-    def __init__(self, camera_index=0):
+    def __init__(self, camera_index=0, use_camera=True):
         """Initialize the camera."""
-        self.cap = cv2.VideoCapture(camera_index)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))
-
-        if not self.cap.isOpened():
-            raise Exception("❌ Error: Could not open camera.")
+        if use_camera:
+            self.cap = cv2.VideoCapture(camera_index)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))
+            if not self.cap.isOpened():
+                raise Exception("❌ Error: Could not open camera.")
+        else:
+            self.cap = None
 
         self.frame = None
         self.running = True
 
-        # Wait up to 5 seconds for the first frame
-        for _ in range(10):  
-            ret, self.frame = self.cap.read()
-            if ret:
-                print("✅ First frame captured!")
-                break
-            time.sleep(0.5)  # Wait 500ms between retries
-        else:
-            raise Exception("❌ Error: No frame received after 5 seconds.")
+        # # Wait up to 5 seconds for the first frame
+        # for _ in range(10):  
+        #     ret, self.frame = self.cap.read()
+        #     if ret:
+        #         print("✅ First frame captured!")
+        #         break
+        #     time.sleep(0.5)  # Wait 500ms between retries
+        # else:
+        #     raise Exception("❌ Error: No frame received after 5 seconds.")
 
         # Start background thread
         self.thread = threading.Thread(target=self.update, daemon=True)
@@ -39,6 +41,9 @@ class Camera:
 
     def update(self):
         """Continuously capture frames in a separate thread."""
+        if not self.cap:
+            return None
+
         while self.running:
             ret, frame = self.cap.read()
             if ret:
@@ -56,6 +61,9 @@ class Camera:
 
     def get_frame(self):
         """Return the latest frame as a JPEG byte array."""
+        if not self.cap:
+            return None
+        
         if self.frame is None:
             print("⚠️ Warning: No frame available yet!")
             return None  
@@ -77,7 +85,8 @@ class Camera:
 
     def release(self):
         """Release the camera."""
-        self.running = False
-        self.thread.join()
-        self.cap.release()
-        print("Camera released.")
+        if self.cap:
+            self.running = False
+            self.thread.join()
+            self.cap.release()
+            print("Camera released.")
