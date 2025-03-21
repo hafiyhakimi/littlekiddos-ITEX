@@ -5,7 +5,6 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify, R
 from collections import deque
 from threading import Thread, Event
 import time
-import pyttsx3
 import threading
 import cv2
 
