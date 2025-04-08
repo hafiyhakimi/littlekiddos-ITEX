@@ -345,7 +345,7 @@ threading.Thread(target=scan_qr, daemon=True).start()
 if __name__ == '__main__':
     try:
         test_mode = os.environ.get("TEST_MODE", "0") == "1"
-        camera = Camera(use_camera=test_mode)
+        camera = Camera(use_camera=not test_mode)
         app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
     except KeyboardInterrupt:
         print("\n👋 Flask app interrupted by user.")
