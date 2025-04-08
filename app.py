@@ -9,14 +9,13 @@ import threading
 import cv2
 
 from qrScanner import QRScanner
+from camera import Camera
 from flask_socketio import SocketIO
 import json
-from camera import Camera
 
 app = Flask(__name__, static_folder='assets')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-camera = Camera()
 qr_scanner = QRScanner()
 latest_qr_data = None
 
@@ -297,13 +296,10 @@ def play_audio(file_path):
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
 
-# Initialize the camera
-camera = Camera()
-
 # Function to generate the video stream
 def generate_frames():
     while True:
-        frame = camera.get_frame()
+        frame = qr_scanner.camera.get_frame()
         if frame is None:
             continue
         
@@ -318,20 +314,27 @@ def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-
 # Background QR code scanner thread
 def scan_qr():
     global latest_qr_data
-    while True:
-        frame = camera.get_frame()
-        if frame is None:
-            continue
-        
-        qr_data = qr_scanner.scan_qr_code(frame)
-        if qr_data:
-            latest_qr_data = qr_data
-            print(f"🎯 QR Code Detected: {qr_data}")
-            time.sleep(2)
+    try:
+        while True:
+            frame = qr_scanner.camera.get_frame()
+            if frame is None:
+                continue
+            
+            qr_data = qr_scanner.scan_qr_code(frame)
+            if qr_data:
+                latest_qr_data = qr_data
+                print(f"🎯 QR Code Detected: {qr_data}")
+                time.sleep(2)
+    except KeyboardInterrupt:
+        print("\n👋 KeyboardInterrupt detected. Shutting down QR scanner.")
+    finally:
+        if qr_scanner and qr_scanner.camera:
+            print("🔒 Releasing camera resources...")
+            qr_scanner.camera.release()
+        cv2.destroyAllWindows()
 
 # Start QR code scanner in a separate thread
 threading.Thread(target=scan_qr, daemon=True).start()
@@ -340,7 +343,17 @@ threading.Thread(target=scan_qr, daemon=True).start()
 # play_audio('path/to/your/audio.mp3')
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    try:
+        test_mode = os.environ.get("TEST_MODE", "0") == "1"
+        camera = Camera(use_camera=test_mode)
+        app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    except KeyboardInterrupt:
+        print("\n👋 Flask app interrupted by user.")
+    finally:
+        if camera:
+            print("🔒 Releasing camera resources...")
+            camera.release()
+        cv2.destroyAllWindows()
     # try:
     #     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
     # finally:

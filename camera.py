@@ -7,7 +7,19 @@ Salman H.
 
 import cv2
 import threading
-import time
+import numpy as np
+import os
+
+class DummyCamera:
+    def __init__(self):
+        print("⚠️ Using DummyCamera. No hardware camera detected.")
+
+    def get_frame(self):
+        # Return a black frame
+        return np.zeros((480, 640, 3), dtype=np.uint8)
+
+    def release(self):
+        pass
 
 class Camera:
     def __init__(self, camera_index=0, use_camera=True):
@@ -19,10 +31,12 @@ class Camera:
             self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))
             if not self.cap.isOpened():
                 raise Exception("❌ Error: Could not open camera.")
+            self.frame = None
         else:
             self.cap = None
+            self.frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
-        self.frame = None
+        
         self.running = True
 
         # # Wait up to 5 seconds for the first frame
@@ -68,12 +82,12 @@ class Camera:
             print("⚠️ Warning: No frame available yet!")
             return None  
 
-        print(f"📷 Original Frame shape: {self.frame.shape}")
+        # print(f"📷 Original Frame shape: {self.frame.shape}")
 
         # Ensure the frame is resized to a fixed resolution
-        resized_frame = cv2.resize(self.frame, (1280, 720))
+        resized_frame = cv2.resize(self.frame, (640, 480))
 
-        print(f"📷 Resized Frame shape: {resized_frame.shape}")
+        # print(f"📷 Resized Frame shape: {resized_frame.shape}")
 
         success, buffer = cv2.imencode('.jpg', resized_frame)  
         if not success:
@@ -85,7 +99,7 @@ class Camera:
 
     def release(self):
         """Release the camera."""
-        if self.cap:
+        if self.cap and not os.getenv('CI'):
             self.running = False
             self.thread.join()
             self.cap.release()

@@ -7,14 +7,18 @@ Salman H.
 
 import cv2
 from pyzbar.pyzbar import decode
-from camera import Camera
+from camera import Camera, DummyCamera
 import os
 import time
 
 class QRScanner:
     def __init__(self, use_camera=True):
         """Initialize the QR scanner and camera."""
-        self.camera = Camera() if use_camera else None
+        try:
+            self.camera = Camera() if use_camera else None
+        except Exception:
+            print("⚠️ Camera not available, switching to DummyCamera.")
+            self.camera = DummyCamera()
 
     def is_display_available(self):
         """Check if a display is available (for headless systems)."""
