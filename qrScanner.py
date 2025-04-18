@@ -1,92 +1,98 @@
 """
 This file is for scanning QR code from the camera, and returning the decoded value
-
 @author
 Salman H.
 """
-
 import cv2
-from pyzbar.pyzbar import decode
-from camera import Camera, DummyCamera
-import os
 import time
+from pyzbar.pyzbar import decode
+import threading
 
 class QRScanner:
-    def __init__(self, use_camera=True):
-        """Initialize the QR scanner and camera."""
-        try:
-            self.camera = Camera() if use_camera else None
-        except Exception:
-            print("⚠️ Camera not available, switching to DummyCamera.")
-            self.camera = DummyCamera()
+    def __init__(self, camera):
+        """Initialize the QR scanner with a camera instance"""
+        self.camera = camera
+        self.last_scan_time = 0
+        self.scan_cooldown = 0.5  # Reduced cooldown for more frequent scans
+        self.last_code = None
 
-    def is_display_available(self):
-        """Check if a display is available (for headless systems)."""
-        return "DISPLAY" in os.environ or os.environ.get('WAYLAND_DISPLAY') is not None
+        # Start scanning thread for continuous detection
+        self.running = True
+        self.scan_thread = threading.Thread(target=self._continuous_scan)
+        self.scan_thread.daemon = True
+        self.scan_thread.start()
 
-    def scan_qr_code(self, frame=None):
-        """
-        Detects and decodes a QR code from a given frame.
-        :param frame: Image frame from which to detect QR code.
-        :return: Decoded QR code text if found, else None.
-        """
-        if frame is None and self.camera:
-            frame = self.camera.get_frame()
+    def _continuous_scan(self):
+        """Continuously scan QR codes in a background thread"""
+        while self.running:
+            result = self._process_frame()
+            if result:
+                self.last_code = result
+            time.sleep(0.1)  # Check every 100ms
 
+    def _process_frame(self):
+        """Process a frame to detect QR codes with enhanced detection"""
+        # Get the current frame
+        frame = self.camera.get_raw_frame()
         if frame is None:
             return None
 
-        if len(frame.shape) == 3:
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        else:
-            gray_frame = frame
-        qr_codes = decode(gray_frame)  # Detect QR codes
+        # Apply image processing to improve QR detection
+        try:
+            # Convert to grayscale
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        if qr_codes:
-            qr_data = qr_codes[0].data.decode('utf-8')
-            print(f"✅ QR Code Detected: {qr_data}")
-            return qr_data  # Return the first detected QR code text
+            # Apply adaptive thresholding
+            thresh = cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY, 11, 2
+            )
 
-        return None  # No QR code detected
+            # Try multiple processing methods
+            detection_images = [
+                gray,                          # Original grayscale
+                thresh,                         # Thresholded
+                cv2.GaussianBlur(gray, (5, 5), 0)  # Blurred to reduce noise
+            ]
 
-    @staticmethod
-    def decode_qr_from_frame(frame):
-        decoded_objects = decode(frame)
-        for obj in decoded_objects:
-            return obj.data.decode("utf-8")
-        return None
+            # Try to detect QR in each processed image
+            for img in detection_images:
+                # Scan for QR codes
+                qr_codes = decode(img)
 
-    def scan_from_camera(self):
-        """Continuously scans QR codes from the live camera feed."""
-        print("🎥 Starting QR Scanner... Press 'q' to quit.")
+                if qr_codes:
+                    for qr in qr_codes:
+                        # Update last scan time
+                        self.last_scan_time = time.time()
 
-        while True:
-            start_time = time.time()
-            frame = self.camera.get_frame_raw()
-            if frame is None:
-                print("❌ Error: No frame received!")
-                continue  # Try again
+                        # Return the QR code data
+                        return qr.data.decode('utf-8')
 
-            qr_data = self.scan_qr_code(frame)
+            # If we reach here, no QR code was found in any processed image
+            return None
 
-            display_frame = cv2.resize(frame, (640, 480))
+        except Exception as e:
+            print(f"Error in QR processing: {e}")
+            return None
 
-            # Display the frame
-            if self.is_display_available():
-                cv2.imshow("QR Scanner", display_frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+    def scan_qr_code(self):
+        """Return last detected QR code, with cooldown"""
+        current_time = time.time()
 
-            if qr_data:
-                print(f"✅ Scanned QR Code: {qr_data}")
-                return qr_data
+        # If we're in cooldown and have a code, return it
+        if current_time - self.last_scan_time < self.scan_cooldown and self.last_code:
+            return self.last_code
 
-            # Press 'q' to exit
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        # Otherwise, force a new scan
+        result = self._process_frame()
+        if result:
+            self.last_code = result
+            self.last_scan_time = current_time
 
-            time.sleep(max(0, 0.1 - (time.time() - start_time)))
+        return self.last_code
 
-    def release(self):
-        if self.camera:
-            self.camera.release()
+    def stop(self):
+        """Stop the scanning thread"""
+        self.running = False
+        if self.scan_thread.is_alive():
+            self.scan_thread.join(timeout=1.0)
