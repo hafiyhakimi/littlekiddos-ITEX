@@ -10,11 +10,8 @@ import cv2
 
 from qrScanner import QRScanner
 from camera import Camera
-from flask_socketio import SocketIO
-import json
 
 app = Flask(__name__, static_folder='assets')
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 qr_scanner = QRScanner()
 latest_qr_data = None
