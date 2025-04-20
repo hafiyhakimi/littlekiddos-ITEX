@@ -1,6 +1,6 @@
 flask_mysqldb
 pygame
-opencv-python
-pyzbar
-eventlet
-flask-socketio
+opencv-python==4.8.0.76
+pyzbar==0.1.9
+numpy==1.24.3
+werkzeug==2.3.7

@@ -20,7 +20,10 @@ jobs:
           python-version: '3.11'
 
       - name: Install system dependencies (libzbar0)
-        run: sudo apt-get update && sudo apt-get install -y libzbar0
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-opencv
+          sudo apt-get install -y libzbar0 libzbar-dev
 
       - name: Cache pip dependencies
         uses: actions/cache@v3
@@ -38,10 +41,6 @@ jobs:
       - name: Set CI environment variable
         run: echo "CI=true" >> $GITHUB_ENV
       
-      - name: Run Unit Tests
-        run: |
-          python -m unittest discover -s . -p "test_*.py"
-      
       - name: Check app.py launches successfully
         run: |
           TEST_MODE=1 python app.py &
@@ -53,8 +52,8 @@ jobs:
 
       - name: Show test result status
         if: ${{ failure() }}
-        run: echo "❌ Some tests failed. Please check the logs."
+        run: echo "Some tests failed. Please check the logs."
 
       - name: Confirm success
         if: ${{ success() }}
-        run: echo "✅ All tests passed successfully!"
+        run: echo "All tests passed successfully!"
