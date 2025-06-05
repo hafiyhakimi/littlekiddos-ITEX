@@ -1,162 +1,116 @@
 from flask import Flask, render_template, request, Response, jsonify, redirect, url_for, session
-from camera import Camera
-from qrScanner import QRScanner
+from camera import UnifiedCamera  # Import the new unified camera
 import time
-import threading
 import os
 from datetime import datetime
 import atexit
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # For session management
+app.secret_key = os.urandom(24)
 
-# Create camera instance
-camera = Camera()
-qr_scanner = QRScanner(camera)
-
-# Start QR scanning in background
-qr_thread = None
-qr_scanning_active = False
-
-def scan_for_qr():
-    """Background thread function for QR code scanning"""
-    global qr_scanning_active
-    while qr_scanning_active:
-        qr_data = qr_scanner.scan_qr_code()
-        if qr_data:
-            app.config['QR_DATA'] = qr_data
-            time.sleep(0.5)  # Prevent multiple rapid detections
+# Single camera instance handles everything
+camera = UnifiedCamera(width=640, height=480, jpeg_quality=70)
 
 @app.route('/')
 def index():
-    """Video streaming home page - Reset QR data on every visit"""
-    qr_scanner.last_code = None  # Reset the scanner's last detected code
-    
-    # Pass a reset flag to template to ensure client-side reset
+    """Video streaming home page"""
+    # Clear any pending QR data for fresh start
+    camera.clear_qr_queue()
     return render_template('test_index.html')
 
 @app.route('/video_feed')
 def video_feed():
-    """Video streaming route."""
+    """Video streaming route with built-in QR status overlay"""
     def generate():
         while True:
-            # Get a frame from the camera
-            frame = camera.get_frame()
-            
-            # Yield the frame to the client
+            frame = camera.get_frame()  # Already includes QR status overlay
             yield (b'--frame\r\n'
                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            time.sleep(0.017)  # Adjust frame rate
     
     return Response(generate(), 
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/check_qr_data')
+def check_qr_data():
+    """API endpoint to check for new QR detections"""
+    qr_detection = camera.get_latest_qr()
+    
+    if qr_detection:
+        return jsonify({
+            'detected': True, 
+            'data': qr_detection['data'],
+            'timestamp': qr_detection['timestamp']
+        })
+    
+    return jsonify({'detected': False})
+
 @app.route('/scan_qr', methods=['GET'])
 def scan_qr():
-    """Endpoint to scan QR code"""
-    qr_data = qr_scanner.scan_qr_code()
+    """Manual QR scan endpoint (for compatibility)"""
+    # Check if there's already detected QR data
+    qr_detection = camera.get_latest_qr()
     
-    if qr_data:
-        return jsonify({'success': True, 'data': qr_data})
+    if qr_detection:
+        return jsonify({'success': True, 'data': qr_detection['data']})
     else:
         return jsonify({'success': False, 'error': 'No QR code detected'})
 
-@app.route('/check_qr_data')
-def check_qr_data():
-    """API endpoint to check if QR data is available"""
-    qr_data = app.config.get('QR_DATA', None)
-    if qr_data:
-        # Clear the data so it's only used once
-        app.config['QR_DATA'] = None
-        return jsonify({'detected': True, 'data': qr_data})
-    return jsonify({'detected': False})
+@app.route('/qr_settings', methods=['POST'])
+def qr_settings():
+    """Configure QR scanning settings"""
+    data = request.get_json()
+    
+    if 'enabled' in data:
+        camera.set_qr_scanning(data['enabled'])
+    
+    if 'cooldown' in data:
+        camera.set_qr_cooldown(data['cooldown'])
+    
+    return jsonify({'status': 'updated'})
 
 @app.route('/submit', methods=['POST'])
 def submit():
     """Handle form submission"""
     qr_data = request.form.get('qr_data', '')
     
-    # Store the QR data in session
     session['qr_data'] = qr_data
-    
-    # Generate timestamp for reference (could be used to look up specific reference images)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    session['timestamp'] = timestamp
+    session['timestamp'] = datetime.now().strftime("%Y%m%d%H%M%S")
     
     return redirect(url_for('result'))
 
 @app.route('/result')
 def result():
-    """Results page with camera feed and reference image"""
+    """Results page"""
     qr_data = session.get('qr_data', '')
     timestamp = session.get('timestamp', '')
-    
-    # In a real application, you might use the QR data or timestamp 
-    # to look up the specific reference image to display
     reference_image = f"Reference for: {qr_data}"
-    # reference_image = encem.jpg
     
     return render_template('test_result.html', 
                            qr_data=qr_data,
                            reference_image=reference_image,
                            timestamp=timestamp)
 
-# def gen_frames():
-#     """Generate camera frames"""
-#     while True:
-#         frame = camera.get_frame()
-#         yield (b'--frame\r\n'
-#                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+@app.route('/status')
+def status():
+    """Get camera and QR scanning status"""
+    return jsonify({
+        'qr_scanning_enabled': camera.qr_scanning_enabled,
+        'qr_cooldown': camera.qr_cooldown,
+        'has_qr_data': camera.has_qr_data(),
+        'last_qr': camera.last_qr_data,
+        'last_qr_time': camera.last_qr_time
+    })
 
-# @app.route('/video_feed')
-# def video_feed():
-#     """Route for streaming video feed"""
-#     return Response(gen_frames(),
-#                     mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/start_scanning')
-def start_scanning():
-    """Start QR code scanning in background"""
-    global qr_thread, qr_scanning_active
-    
-    if qr_thread is None or not qr_thread.is_alive():
-        qr_scanning_active = True
-        qr_thread = threading.Thread(target=scan_for_qr)
-        qr_thread.daemon = True
-        qr_thread.start()
-    
-    return jsonify({'status': 'started'})
-
-@app.route('/stop_scanning')
-def stop_scanning():
-    """Stop QR code scanning"""
-    global qr_scanning_active
-    qr_scanning_active = False
-    app.config['QR_DATA'] = None
-    return jsonify({'status': 'stopped'})
-
-# Handle proper cleanup when the app is shutting down
+# Cleanup function
 def cleanup():
     print("Cleaning up resources...")
-    qr_scanner.stop()
     camera.release()
 
 atexit.register(cleanup)
 
 if __name__ == '__main__':
     try:
-        # Start with scanning active
-        qr_scanning_active = True
-        qr_thread = threading.Thread(target=scan_for_qr)
-        qr_thread.daemon = True
-        qr_thread.start()
-        
-        # Run the Flask app
+        print("Starting Flask app with unified camera...")
         app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
     finally:
-        # Ensure cleanup on exit
-        qr_scanning_active = False
-        if qr_thread and qr_thread.is_alive():
-            qr_thread.join(timeout=1.0)
         cleanup()
-        camera.release()
