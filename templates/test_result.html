@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta http-equiv="refresh" content="10;url={{ url_for('index') }}">
+</head>
+<body class="result-page">
+    <div class="container">
+        <h1>Scan Results</h1>
+        
+        <div class="qr-data">
+            <h2>QR Code Data:</h2>
+            <p id="qr-result">{{ qr_data }}</p>
+        </div>
+        
+        <div class="comparison">
+            <div class="live-feed">
+                <h3>Live Camera Feed</h3>
+                <img src="{{ url_for('video_feed') }}" alt="Live Camera Feed">
+            </div>
+            
+            <div class="reference-image">
+                <h3>Reference Image</h3>
+                <!-- In a real application, you'd dynamically load the appropriate reference image -->
+                <div class="reference-placeholder">
+                    <p>{{ reference_image }}</p>
+                    <p>Timestamp: {{ timestamp }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="timer">
+            <p>Returning to scanner in <span id="countdown">10</span> seconds...</p>
+        </div>
+    </div>
+
+    <script>
+        // Countdown timer
+        let timeLeft = 10;
+        const countdownElement = document.getElementById('countdown');
+        
+        const countdownInterval = setInterval(function() {
+            timeLeft--;
+            countdownElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+        
+        // Stop scanning while on result page to save resources
+        fetch('/stop_scanning')
+            .then(response => response.json())
+            .then(data => console.log('Scanning stopped:', data));
+    </script>
+</body>
+</html>

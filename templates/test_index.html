@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="landing-page">
+    <div class="container">
+        <h1>QR Code Scanner</h1>
+        
+        <div class="scanner-status">
+            <div id="status-indicator" class="scanning">Scanning for QR code...</div>
+        </div>
+        
+        <form id="qrForm" action="{{ url_for('submit') }}" method="post">
+            <div class="form-group">
+                <label for="qr_data">QR Code Data:</label>
+                <input type="text" id="qr_data" name="qr_data" readonly>
+            </div>
+            <div class="form-group">
+                <button type="submit" id="submitBtn" disabled>Submit</button>
+            </div>
+        </form>
+        
+        <div class="scanner-preview">
+            <img src="{{ url_for('video_feed') }}" alt="Camera Preview">
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Start QR scanning when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            // Initialize QR scanning
+            fetch('/start_scanning')
+                .then(response => response.json())
+                .then(data => console.log('Scanning started:', data));
+            
+            // Poll for QR data
+            startQRDataPolling();
+        });
+    </script>
+</body>
+</html>

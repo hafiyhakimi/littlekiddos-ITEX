@@ -1,14 +1,20 @@
 from flask_mysqldb import MySQL
 import pygame
 import os
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
 from collections import deque
 from threading import Thread, Event
 import time
-import pyttsx3
 import threading
+import cv2
+
+from qrScanner import QRScanner
+from camera import Camera
 
 app = Flask(__name__, static_folder='assets')
+
+qr_scanner = QRScanner()
+latest_qr_data = None
 
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -287,8 +293,74 @@ def play_audio(file_path):
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
 
+# Function to generate the video stream
+def generate_frames():
+    while True:
+        frame = qr_scanner.camera.get_frame()
+        if frame is None:
+            continue
+        
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+# Route to serve the live feed
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+# Background QR code scanner thread
+def scan_qr():
+    global latest_qr_data
+    try:
+        while True:
+            frame = qr_scanner.camera.get_frame()
+            if frame is None:
+                continue
+            
+            qr_data = qr_scanner.scan_qr_code(frame)
+            if qr_data:
+                latest_qr_data = qr_data
+                print(f"🎯 QR Code Detected: {qr_data}")
+                time.sleep(2)
+    except KeyboardInterrupt:
+        print("\n👋 KeyboardInterrupt detected. Shutting down QR scanner.")
+    finally:
+        if qr_scanner and qr_scanner.camera:
+            print("🔒 Releasing camera resources...")
+            qr_scanner.camera.release()
+        cv2.destroyAllWindows()
+
+# Start QR code scanner in a separate thread
+threading.Thread(target=scan_qr, daemon=True).start()
+
 # Usage example
 # play_audio('path/to/your/audio.mp3')
 
 if __name__ == '__main__':
-    app.run()
+    try:
+        test_mode = os.environ.get("TEST_MODE", "0") == "1"
+        camera = None
+        try:
+            camera = Camera(use_camera=not test_mode)
+        except Exception as e:
+            print(e)
+            if not test_mode:
+                print("💥 Critical error - camera failed in production mode.")
+                exit(1)
+            else:
+                print("🧪 Running in test mode without real camera.")
+        app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    except KeyboardInterrupt:
+        print("\n👋 Flask app interrupted by user.")
+    finally:
+        if camera:
+            print("🔒 Releasing camera resources...")
+            camera.release()
+        cv2.destroyAllWindows()
+    # try:
+    #     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # finally:
+    #     camera.release()
