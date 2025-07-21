@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, Response, jsonify, redirect, url_for, session
 from unifiedCamera import UnifiedCamera  # Import the new unified camera
-import time
 import os
 from datetime import datetime
 import atexit

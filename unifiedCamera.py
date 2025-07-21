@@ -10,6 +10,7 @@ from pyzbar.pyzbar import decode
 from collections import deque
 import queue
 from picamera2 import Picamera2
+from buzzer import passiveBuzzer
 
 class UnifiedCamera:
     def __init__(self, width=640, height=480, jpeg_quality=70):
@@ -128,6 +129,9 @@ class UnifiedCamera:
             return
 
         print(f"QR Code detected: {qr_data}")
+        # Buzzer initialisation
+        buzzer = passiveBuzzer(pin=18)  # Use GPIO pin 18 for the buzzer
+        buzzer.buzz(frequency=500, duration=1.5)  # Buzz on detection
 
         # Update state
         self.last_qr_data = qr_data
